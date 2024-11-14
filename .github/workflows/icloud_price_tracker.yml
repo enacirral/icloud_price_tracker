@@ -1,0 +1,72 @@
+name: iCloud Price Tracker
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  track-prices:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v3
+      
+    - name: 设置 Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        
+    - name: 安装依赖
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests beautifulsoup4 pytz
+        
+    - name: 创建数据目录
+      run: |
+        mkdir -p public/html/archive
+        mkdir -p public/json/archive
+        mkdir -p logs
+        
+    - name: 运行数据采集
+      run: |
+        python scripts/test_workflow.py
+        
+    - name: 整理数据文件
+      run: |
+        # 移动超过7天的文件到存档
+        find public/json -maxdepth 1 -type f -mtime +7 -exec mv {} public/json/archive/ \;
+        find public/html -maxdepth 1 -type f -mtime +7 -exec mv {} public/html/archive/ \;
+        
+    - name: 提交更新的数据
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add public/
+        git add logs/
+        git commit -m "更新 iCloud 价格数据 $(date +'%Y-%m-%d')" || exit 0
+        
+    - name: 推送更改
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ${{ github.ref }}
+
+    - name: 上传构建产物
+      uses: actions/upload-artifact@v3
+      with:
+        name: price-data-${{ github.run_number }}
+        path: |
+          public/json/*.json
+          public/html/*.html
+        retention-days: 30
+
+    - name: 部署到 Vercel
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      run: |
+        npm i -g vercel
+        vercel deploy --prod --token=$VERCEL_TOKEN
