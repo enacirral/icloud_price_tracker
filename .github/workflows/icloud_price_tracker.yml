@@ -31,7 +31,7 @@ jobs:
         
     - name: 运行数据采集
       run: |
-        python scripts/test_workflow.py
+        python scripts/main.py
         
     - name: 整理数据文件
       run: |
@@ -45,7 +45,7 @@ jobs:
         git config --local user.name "github-actions[bot]"
         git add public/
         git add logs/
-        git commit -m "更新 iCloud 价格数据 $(date +'%Y-%m-%d')" || exit 0
+        TZ='Asia/Shanghai' git commit -m "更新 iCloud 价格数据 $(date +'%Y-%m-%d %H:%M:%S')" || exit 0
         
     - name: 推送更改
       uses: ad-m/github-push-action@master
@@ -63,6 +63,7 @@ jobs:
         retention-days: 30
 
     - name: 部署到 Vercel
+      if: env.VERCEL_TOKEN && env.VERCEL_ORG_ID && env.VERCEL_PROJECT_ID
       env:
         VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}

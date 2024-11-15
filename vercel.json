@@ -1,25 +1,11 @@
 {
-    "version": 2,
-    "builds": [
-      {
-        "src": "package.json",
-        "use": "@vercel/next"
-      }
-    ],
-    "routes": [
-      {
-        "src": "/html/(.*)",
-        "dest": "/html/$1",
-        "headers": {
-          "cache-control": "public, max-age=0, must-revalidate"
-        }
-      },
-      {
-        "src": "/json/(.*)",
-        "dest": "/json/$1",
-        "headers": {
-          "cache-control": "public, max-age=0, must-revalidate"
-        }
-      }
-    ]
-  }
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/html/icloud_prices_sorted_latest.html",
+      "permanent": false
+    }
+  ]
+}
